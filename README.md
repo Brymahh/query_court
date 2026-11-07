@@ -43,7 +43,7 @@ Sandbox database
 ```
 
 
-## How to Run 
+## How to Run
 ```bash
     uv run pytest
     uv run uvicorn query_court.main:app --reload

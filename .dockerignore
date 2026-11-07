@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env_example
+.git
+.venv
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.pyc
+notes.md
+plan.md
+AGENTS.md
+CLAUDE.md
+diagram.html
+.claude

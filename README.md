@@ -1,5 +1,5 @@
-# query_court
-QueryCourt: the generator argues, the critic cross-examines, and the court rules.
+# Query-Court
+> The Generator argues, the Critic cross-examines, and the Court rules.
 
 
 ## Problem Statement
@@ -25,27 +25,123 @@ Query-Court is implemented as a Reflexion-style generator-critic workflow using 
 
 
 
-
-**Confidence levels**
-
-```text
-No schema
-  Syntax and safety review
-
-Prompt-provided schema details
-  Partial schema-aware review
-
-Uploaded DDL
-  Schema-aware reference validation
-
-Sandbox database
-  Schema validation plus controlled execution
-```
-
-
 ## How to Run
 ```bash
-    uv run pytest
-    uv run uvicorn query_court.main:app --reload
-    curl http://127.0.0.1:8000/health
+  uv sync
+  uv run uvicorn app.main:app --reload --app-dir src
+  curl http://127.0.0.1:8000/health
+```
+
+## Requirements
+
+- Python 3.12
+- `uv`
+- Docker Desktop
+- Git
+
+## Local Setup
+
+```bash
+git clone https://github.com/Brymahh/query_court.git
+cd query_court
+cp .env_example .env
+uv sync
+```
+
+The environment template contains empty Azure OpenAI values and a local Docker database URL.
+
+## Run With Docker Compose
+
+```bash
+docker compose up --build -d
+docker compose ps
+curl http://127.0.0.1:8000/health
+docker compose exec db pg_isready -U query_court -d query_court
+```
+
+Check PostgreSQL through the application container:
+
+```bash
+docker compose exec app python -c 'import os, psycopg; connection = psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=3); connection.execute("SELECT 1"); print("Application database connection successful"); connection.close()'
+```
+
+Stop the local stack:
+
+```bash
+docker compose down
+```
+
+Note
+- Use `docker compose down --volumes` only when you deliberately want to remove the local PostgreSQL data volume.
+
+## Review Modes
+
+Schema context is optional. Query-Court must never claim to have performed a check for which it had no evidence.
+
+| Context | Checks available | Limitations |
+| --- | --- | --- |
+| No schema | Syntax, selected dialect, read-only policy, dangerous patterns | Cannot verify tables, columns, joins, or results |
+| Prompt-provided details | No-schema checks plus partial reference checks | User-provided details are incomplete and unverified |
+| Uploaded DDL | Normalized tables, columns, types, and relationships | DDL describes structure, not business meaning or real data |
+| Isolated sandbox | Schema checks, `EXPLAIN`, and controlled read-only execution | Synthetic data cannot prove real business correctness |
+
+
+## Architecture
+
+See [diagram.html](diagram.html) for the architecture map.
+
+```text
+Docker Compose
+|- FastAPI application container, built from Dockerfile
+`- PostgreSQL 16 container for sessions and audit history
+```
+
+The planned hosted runtime is:
+
+```text
+Vercel -> Next.js frontend
+Azure Container Apps -> FastAPI Docker image
+Azure Database for PostgreSQL -> managed application database
+```
+
+The local PostgreSQL container is not transferred to Azure. It is replaced by the managed Azure database, while the application image remains portable.
+
+## Development Checks
+
+```bash
+uv run pre-commit install
+uv run pre-commit run --all-files
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy
+```
+
+GitHub Actions runs these quality checks and Gitleaks secret scanning on issue and phase branch pushes and pull requests.
+
+## Security Boundaries
+
+- Local PostgreSQL credentials are development-only values.
+- `.env` is ignored and must never be committed.
+- `.dockerignore` excludes local secrets and development artifacts from the build context.
+- The Dockerfile does not contain API keys or database passwords.
+- PostgreSQL is a separate service from the application image.
+- Production secrets will come from Azure Key Vault or managed environment configuration.
+- Phase 0 does not connect to a user's production database.
+- Future SQL execution will use read-only permissions, timeouts, resource limits, and an isolated sandbox.
+- Synthetic sandbox results will not be presented as proof of business correctness.
+
+## Contribution Workflow
+
+Each issue uses its own branch and pull request into the phase branch. A phase is merged into `main` only after all of its issue pull requests and checks are
+complete. Use a Conventional Commit message, keep changes within the issue, and include `Closes #N` in the pull request body. Do not commit directly to
+`main`.
+
+```text
+main
+`- phase/0-foundation
+   |- issue/0.1-initialize-backend
+   |- issue/0.2-quality-automation
+   |- issue/0.3-local-infrastructure
+   `- issue/0.4-documentation
 ```

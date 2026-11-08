@@ -23,14 +23,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
           version: "0.9.4"
-
-      - name: Set up Python
-        run: uv python install 3.12
 
       - name: Install dependencies
         run: uv sync --locked

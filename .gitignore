@@ -7,3 +7,6 @@ diagram.html
 CLAUDE.md
 
 notes.md
+**cache**
+.venv/
+.vscode/

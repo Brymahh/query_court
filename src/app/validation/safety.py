@@ -73,6 +73,13 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
 
     # print(f"Parsed expressions: {expressions}")
     expression = expressions[0]
+    if expression is None:
+        return ValidationCheck(
+            name="execution_policy",
+            status=CheckStatus.FAILED,
+            evidence="SQL parser returned no expression.",
+        )
+
     root_key = str(expression.key)
 
     for node in expression.walk():

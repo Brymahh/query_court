@@ -128,3 +128,10 @@ class AuditEvent(ReviewModel):
     event_type: AuditEventType
     message: str = Field(min_length=1)
     round_number: int | None = Field(default=None, ge=1)
+
+
+# Saving this for future use, in case we want to support foreign key validation.
+class SchemaForeignKey(ReviewModel):
+    column: str
+    referenced_table: str
+    referenced_column: str

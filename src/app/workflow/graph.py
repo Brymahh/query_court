@@ -51,6 +51,11 @@ def _generate_node(state: ReviewState, generator: SQLGenerator) -> dict[str, obj
         event_type=AuditEventType.DRAFT_CREATED,
         message="Generator created a SQL draft.",
         round_number=round_number,
+        data={
+            "sql": draft.sql,
+            "dialect": str(draft.dialect),
+            "round_number": round_number,
+        },
     )
 
     events = [*state.get("events", []), event]
@@ -73,6 +78,11 @@ def _critique_node(state: ReviewState, critic: SQLCritic) -> dict[str, object]:
         event_type=AuditEventType.CRITIQUE_CREATED,
         message="Critic evaluated the SQL draft.",
         round_number=state["round_number"],
+        data={
+            "summary": critique.summary,
+            "requested_revision": critique.requested_revision,
+            "checks": [check.model_dump(mode="json") for check in critique.checks],
+        },
     )
 
     events = [*state.get("events", []), event]
@@ -120,6 +130,7 @@ def _create_verdict_node(state: ReviewState) -> dict[str, object]:
         event_type=AuditEventType.VERDICT_ISSUED,
         message=f"Review finished with status '{status.value}'.",
         round_number=state["round_number"],
+        data=verdict.model_dump(mode="json"),
     )
 
     events = [*state.get("events", []), event]

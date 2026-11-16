@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.api import create_review_router
-from app.dependencies import build_development_event_source
+from app.dependencies import build_azure_event_source
 from app.settings import Settings
 from app.streaming import ReviewEventSource
 
@@ -54,4 +54,4 @@ def create_app(
     return app
 
 
-app = create_app(event_source=build_development_event_source())
+app = create_app(event_source=build_azure_event_source(settings))

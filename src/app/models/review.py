@@ -128,6 +128,7 @@ class AuditEvent(ReviewModel):
     event_type: AuditEventType
     message: str = Field(min_length=1)
     round_number: int | None = Field(default=None, ge=1)
+    data: dict[str, object] = Field(default_factory=dict)
 
 
 # Saving this for future use, in case we want to support foreign key validation.

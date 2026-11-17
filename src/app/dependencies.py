@@ -7,6 +7,33 @@ from app.workflow.agents import SQLCriticAgent, SQLGeneratorAgent
 from app.workflow.event_source import GraphEventSource
 
 
+def build_event_source(settings: Settings) -> GraphEventSource:
+    """Build the configured review event source.
+
+    Parameters
+    ----------
+    settings:
+        Application settings.
+
+    Returns
+    -------
+    GraphEventSource
+        Event source using fake or Azure model providers.
+
+    Raises
+    ------
+    ValueError
+        If an unsupported provider is configured.
+    """
+    if settings.model_provider == "fake":
+        return build_development_event_source()
+
+    if settings.model_provider == "azure":
+        return build_azure_event_source(settings)
+
+    raise ValueError(f"Unsupported model provider: {settings.model_provider}")
+
+
 def build_development_event_source() -> GraphEventSource:
     """Build a deterministic local workflow without Azure calls."""
     generator_provider = FakeModelProvider(

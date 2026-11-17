@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -42,6 +44,11 @@ class Settings(BaseSettings):
     azure_openai_critic_deployment_name: str | None = Field(
         default=None,
         validation_alias="AZURE_OPENAI_CRITIC_DEPLOYMENT_NAME",
+    )
+
+    model_provider: Literal["azure", "fake"] = Field(
+        default="azure",
+        validation_alias="MODEL_PROVIDER",
     )
 
     model_config = SettingsConfigDict(

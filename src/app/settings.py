@@ -51,6 +51,11 @@ class Settings(BaseSettings):
         validation_alias="MODEL_PROVIDER",
     )
 
+    frontend_origin: str = Field(
+        default="http://localhost:3000",
+        validation_alias="FRONTEND_ORIGIN",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix="QUERY_COURT_",

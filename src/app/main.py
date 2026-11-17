@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.api import create_review_router
@@ -38,6 +39,13 @@ def create_app(
         Configured application instance.
     """
     app = FastAPI(title=settings.app_name)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_origin],
+        allow_credentials=True,
+        allow_methods=["POST", "GET"],
+        allow_headers=["*"],
+    )
     app.include_router(create_review_router(event_source))
 
     @app.get("/health", response_model=HealthResponse)

@@ -49,7 +49,7 @@ def _generate_node(state: ReviewState, generator: SQLGenerator) -> dict[str, obj
 
     event = AuditEvent(
         event_type=AuditEventType.DRAFT_CREATED,
-        message="Generator created a SQL draft.",
+        message="A proposed SQL query has been submitted for examination.",
         round_number=round_number,
         data={
             "sql": draft.sql,
@@ -76,7 +76,7 @@ def _critique_node(state: ReviewState, critic: SQLCritic) -> dict[str, object]:
 
     event = AuditEvent(
         event_type=AuditEventType.CRITIQUE_CREATED,
-        message="Critic evaluated the SQL draft.",
+        message="The submitted query has undergone cross-examination.",
         round_number=state["round_number"],
         data={
             "summary": critique.summary,
@@ -128,7 +128,7 @@ def _create_verdict_node(state: ReviewState) -> dict[str, object]:
 
     event = AuditEvent(
         event_type=AuditEventType.VERDICT_ISSUED,
-        message=f"Review finished with status '{status.value}'.",
+        message=f"Judicial programmatic review concluded with status: {status.value.upper()}.",
         round_number=state["round_number"],
         data=verdict.model_dump(mode="json"),
     )

@@ -53,6 +53,42 @@ def build_development_event_source() -> GraphEventSource:
     )
 
 
+def _require_setting[SettingValue](
+    value: SettingValue | None,
+    name: str,
+) -> SettingValue:
+    """Return a required setting or raise a clear configuration error.
+
+    Parameters
+    ----------
+    value:
+        Optional configuration value.
+    name:
+        Environment variable name used in the error message.
+
+    Returns
+    -------
+    SettingValue
+        The validated configuration value.
+
+    Raises
+    ------
+    ValueError
+        If the configuration value is missing.
+    """
+    if value is None:
+        raise ValueError(
+            f"Missing required setting: {name}",
+        )
+
+    if isinstance(value, str) and not value.strip():
+        raise ValueError(
+            f"Setting cannot be empty: {name}",
+        )
+
+    return value
+
+
 def build_azure_event_source(
     settings: Settings,
 ) -> GraphEventSource:
@@ -73,31 +109,39 @@ def build_azure_event_source(
     ValueError
         If required Azure settings are missing.
     """
-    required_values = {
-        "AZURE_OPENAI_API_KEY": settings.azure_openai_api_key,
-        "AZURE_OPENAI_ENDPOINT": settings.azure_openai_endpoint,
-        "AZURE_OPENAI_GENERATOR_DEPLOYMENT_NAME": (settings.azure_openai_generator_deployment_name),
-        "AZURE_OPENAI_CRITIC_DEPLOYMENT_NAME": (settings.azure_openai_critic_deployment_name),
-    }
+    endpoint = _require_setting(
+        settings.azure_openai_endpoint,
+        "AZURE_OPENAI_ENDPOINT",
+    )
 
-    missing_values = [name for name, value in required_values.items() if value is None]
+    api_key = _require_setting(
+        settings.azure_openai_api_key,
+        "AZURE_OPENAI_API_KEY",
+    )
 
-    if missing_values:
-        raise ValueError("Missing Azure configuration: " + ", ".join(missing_values))
+    generator_deployment = _require_setting(
+        settings.azure_openai_generator_deployment_name,
+        "AZURE_OPENAI_GENERATOR_DEPLOYMENT_NAME",
+    )
+
+    critic_deployment = _require_setting(
+        settings.azure_openai_critic_deployment_name,
+        "AZURE_OPENAI_CRITIC_DEPLOYMENT_NAME",
+    )
 
     generator_provider = AzureModelProvider(
         AzureModelConfig(
-            endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
-            deployment_name=(settings.azure_openai_generator_deployment_name),
+            endpoint=endpoint,
+            api_key=api_key,
+            deployment_name=generator_deployment,
         )
     )
 
     critic_provider = AzureModelProvider(
         AzureModelConfig(
-            endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
-            deployment_name=settings.azure_openai_critic_deployment_name,
+            endpoint=endpoint,
+            api_key=api_key,
+            deployment_name=critic_deployment,
         )
     )
 
@@ -105,3 +149,36 @@ def build_azure_event_source(
         generator=SQLGeneratorAgent(generator_provider),
         critic=SQLCriticAgent(critic_provider),
     )
+    # required_values = {
+    #     "AZURE_OPENAI_API_KEY": settings.azure_openai_api_key,
+    #     "AZURE_OPENAI_ENDPOINT": settings.azure_openai_endpoint,
+    #     "AZURE_OPENAI_GENERATOR_DEPLOYMENT_NAME": (
+    # settings.azure_openai_generator_deployment_name),
+    #     "AZURE_OPENAI_CRITIC_DEPLOYMENT_NAME": (
+    # settings.azure_openai_critic_deployment_name),}
+
+    # missing_values = [name for name, value in required_values.items() if value is None]
+
+    # if missing_values:
+    #     raise ValueError("Missing Azure configuration: " + ", ".join(missing_values))
+
+    # generator_provider = AzureModelProvider(
+    #     AzureModelConfig(
+    #         endpoint=settings.azure_openai_endpoint,
+    #         api_key=settings.azure_openai_api_key,
+    #         deployment_name=(settings.azure_openai_generator_deployment_name),
+    #     )
+    # )
+
+    # critic_provider = AzureModelProvider(
+    #     AzureModelConfig(
+    #         endpoint=settings.azure_openai_endpoint,
+    #         api_key=settings.azure_openai_api_key,
+    #         deployment_name=settings.azure_openai_critic_deployment_name,
+    #     )
+    # )
+
+    # return GraphEventSource(
+    #     generator=SQLGeneratorAgent(generator_provider),
+    #     critic=SQLCriticAgent(critic_provider),
+    # )

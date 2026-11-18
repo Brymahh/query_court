@@ -17,6 +17,8 @@ Query-Court is a privacy-aware SQL generation and review product. A generator ag
 
 When DDL is provided, Query-Court parses it with `sqlglot`, extracts normalized schema metadata, and checks whether the generated query references valid tables and columns. When only schema details are included in the prompt, Query-Court uses them as partial context and clearly marks the resulting review as limited. When no schema information is available, the system still checks syntax, dialect compatibility, read-only safety, and dangerous SQL patterns, but does not claim that table or column references are valid.
 
+> Schema context is processed in memory and discarded after the review unless the user explicitly opts into retention.
+
 The critic uses deterministic tools rather than relying only on model opinion. It parses the SQL, checks the selected dialect, validates read-only policy, compares references against available schema context, and optionally runs `EXPLAIN` or controlled execution against a sandbox containing synthetic data. The generator can revise its SQL based on the critique until the query is approved or a configured round limit is reached.
 
 Users see the complete exchange: the original request, generated SQL, structured critique, revisions, validation results, and final verdict. The system reports exactly which checks passed, failed, or could not be performed, producing both the final SQL and an audit trail.

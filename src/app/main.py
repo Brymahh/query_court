@@ -1,7 +1,11 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.api import create_review_router
+from app.dependencies import build_event_source
 from app.settings import Settings
+from app.streaming import ReviewEventSource
 
 
 class HealthResponse(BaseModel):
@@ -17,17 +21,45 @@ class HealthResponse(BaseModel):
 
 
 settings = Settings()
-app = FastAPI(title=settings.app_name)
 
 
-@app.get("/health", response_model=HealthResponse)
-def health_check() -> HealthResponse:
-    """Return the service health status.
+def create_app(
+    event_source: ReviewEventSource | None = None,
+) -> FastAPI:
+    """Create the FastAPI application.
+
+    Parameters
+    ----------
+    event_source:
+        Optional workflow event source.
 
     Returns
     -------
-    HealthResponse
-        A response indicating that the application is running.
+    FastAPI
+        Configured application instance.
     """
+    app = FastAPI(title=settings.app_name)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_origin],
+        allow_credentials=True,
+        allow_methods=["POST", "GET"],
+        allow_headers=["*"],
+    )
+    app.include_router(create_review_router(event_source))
 
-    return HealthResponse(status="ok")
+    @app.get("/health", response_model=HealthResponse)
+    def health_check() -> HealthResponse:
+        """Return the service health status.
+
+        Returns
+        -------
+        HealthResponse
+            A response indicating that the application is running.
+        """
+        return HealthResponse(status="ok")
+
+    return app
+
+
+app = create_app(event_source=build_event_source(settings))

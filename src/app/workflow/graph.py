@@ -128,9 +128,16 @@ def _create_verdict_node(state: ReviewState) -> dict[str, object]:
 
     event = AuditEvent(
         event_type=AuditEventType.VERDICT_ISSUED,
-        message=f"Judicial programmatic review concluded with status: {status.value.upper()}.",
+        message=f"Judicial programmatic review concluded with status: {
+            status.value.upper().replace('_', ' ')
+        }.",
         round_number=state["round_number"],
-        data=verdict.model_dump(mode="json"),
+        data={
+            "status": status.value,
+            # "rationale": verdict.rationale,
+            "review_level": verdict.review_level.value,
+            "final_sql": verdict.final_sql,
+        },
     )
 
     events = [*state.get("events", []), event]

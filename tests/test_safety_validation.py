@@ -8,7 +8,7 @@ def test_select_statement_is_allowed() -> None:
         "postgres",
     )
 
-    assert result.name == "execution_policy"
+    assert result.name == "execution policy"
     assert result.status is CheckStatus.PASSED
 
 

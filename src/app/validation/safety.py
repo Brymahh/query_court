@@ -52,21 +52,21 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
         expressions = parse(sql, read=str(dialect))
     except ParseError as error:
         return ValidationCheck(
-            name="execution_policy",
+            name="execution policy",
             status=CheckStatus.FAILED,
             evidence=f"SQL could not be parsed: {error}",
         )
 
     if not expressions:
         return ValidationCheck(
-            name="execution_policy",
+            name="execution policy",
             status=CheckStatus.FAILED,
             evidence="A SQL statement is required.",
         )
 
     if len(expressions) != 1:
         return ValidationCheck(
-            name="execution_policy",
+            name="execution policy",
             status=CheckStatus.FAILED,
             evidence="Only one SQL statement is allowed.",
         )
@@ -75,7 +75,7 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
     expression = expressions[0]
     if expression is None:
         return ValidationCheck(
-            name="execution_policy",
+            name="execution policy",
             status=CheckStatus.FAILED,
             evidence="SQL parser returned no expression.",
         )
@@ -89,7 +89,7 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
             display_name = "TRUNCATE" if node_key == "truncatetable" else node_key.upper()
 
             return ValidationCheck(
-                name="execution_policy",
+                name="execution policy",
                 status=CheckStatus.FAILED,
                 evidence=(
                     f"Forbidden '{display_name}' operation detected. "
@@ -99,7 +99,7 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
 
     if root_key not in ALLOWED_ROOT_KEYS:
         return ValidationCheck(
-            name="execution_policy",
+            name="execution policy",
             status=CheckStatus.FAILED,
             evidence=(
                 f"Statement type '{root_key}' is not allowed by the read-only execution policy."
@@ -111,7 +111,7 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
 
     #     if node_key in FORBIDDEN_NODE_KEYS:
     #         return ValidationCheck(
-    #             name="execution_policy",
+    #             name="execution policy",
     #             status=CheckStatus.FAILED,
     #             evidence=(
     #                 f"Forbidden '{node_key.upper()}' operation detected. "
@@ -120,10 +120,10 @@ def sql_execution_validator(sql: str, dialect: SQLDialect) -> ValidationCheck:
     #         )
 
     return ValidationCheck(
-        name="execution_policy",
+        name="execution policy",
         status=CheckStatus.PASSED,
         evidence=(
             "The SQL contains one approved read operation and no "
-            "forbidden mutation or DDL operations."
+            "forbidden mutation or Data Definition Language (DDL) operations."
         ),
     )

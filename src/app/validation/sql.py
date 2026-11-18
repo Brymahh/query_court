@@ -29,7 +29,9 @@ def validate_sql(sql: str, dialect: SQLDialect) -> ValidationCheck:
             name="syntax",
             status=CheckStatus.UNAVAILABLE,
             evidence=(
-                f"Dialect '{dialect_name}' is not supported yet. PostgreSQL is currently supported."
+                f"Dialect '{
+                    dialect_name.upper()
+                }' is not supported yet. PostgreSQL is currently supported."
             ),
         )
 
@@ -45,5 +47,5 @@ def validate_sql(sql: str, dialect: SQLDialect) -> ValidationCheck:
     return ValidationCheck(
         name="syntax",
         status=CheckStatus.PASSED,
-        evidence=f"SQL parsed successfully as {dialect_name}.",
+        evidence=f"SQL parsed successfully as {dialect_name.upper()}.",
     )

@@ -57,7 +57,7 @@ async def stream_review_events(
     yield encode_sse_event(
         AuditEvent(
             event_type=AuditEventType.REQUEST_RECEIVED,
-            message="Review request received.",
+            message="Query request received. Processing started...",
         )
     )
 

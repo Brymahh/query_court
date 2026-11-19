@@ -6,9 +6,11 @@
 
 Teams increasingly use LLMs to generate SQL from natural-language requests, but generated queries can reference nonexistent columns, use incorrect joins, violate the requested SQL dialect, produce misleading results, or contain unsafe write operations. Existing text-to-SQL tools typically return one query without showing how it was evaluated, leaving users unable to determine what was actually checked.
 
-Users also cannot always share their database schema because DDL may expose sensitive table names, business concepts, or internal infrastructure details. A useful SQL review system must therefore provide value both when schema metadata is available and when it is not.
+Users also cannot always share their database schema because Data Definition Language may expose sensitive table names, business concepts, or internal infrastructure details. A useful SQL review system must therefore provide value both when schema metadata is available and when it is not.
 
 ## My Solution
+
+<<add recording here>>
 
 Query-Court is a privacy-aware SQL generation and review product. A generator agent converts a plain-English request into SQL, while a critic agent evaluates the query in a visible, streamed conversation. The user selects the target SQL dialect and may optionally provide database context in one of two ways:
 
@@ -21,25 +23,66 @@ When DDL is provided, Query-Court parses it with `sqlglot`, extracts normalized 
 
 The critic uses deterministic tools rather than relying only on model opinion. It parses the SQL, checks the selected dialect, validates read-only policy, compares references against available schema context, and optionally runs `EXPLAIN` or controlled execution against a sandbox containing synthetic data. The generator can revise its SQL based on the critique until the query is approved or a configured round limit is reached.
 
+![](img/archi.png)
+
 Users see the complete exchange: the original request, generated SQL, structured critique, revisions, validation results, and final verdict. The system reports exactly which checks passed, failed, or could not be performed, producing both the final SQL and an audit trail.
 
-Query-Court is implemented as a Reflexion-style generator-critic workflow using LangGraph behind a FastAPI service. Events are streamed to a Next.js and TypeScript frontend over SSE. PostgreSQL stores session history and audit records. LangSmith provides tracing, and a Spider/BIRD-inspired evaluation suite measures SQL-generation and review quality in CI.
+`Query-Court is implemented as a Reflexion-style generator-critic workflow using LangGraph behind a FastAPI service. Events are streamed to a Next.js and TypeScript frontend over SSE. PostgreSQL stores session history and audit records. LangSmith provides tracing, and a Spider/BIRD-inspired evaluation suite measures SQL-generation and review quality in CI.`
 
 
+---
+<details>
+  <summary><strong>
+    🌟 Click here to View Systematic Architectural Diagram 🌟
+  </strong></summary>
 
-## How to Run
-```bash
-  uv sync
-  uv run uvicorn app.main:app --reload --app-dir src
-  curl http://127.0.0.1:8000/health
+```mermaid
+flowchart TD
+    UI[Frontend request] --> RR[ReviewRequest]
+
+    RR --> SC[SchemaContext]
+    RR --> LS[LangGraph review state]
+
+    LS --> GEN[Generator agent]
+    GEN --> DRAFT[SQLDraft]
+
+    DRAFT --> CRITIC[Critic agent]
+
+    CRITIC --> CHECK1[ValidationCheck: syntax]
+    CRITIC --> CHECK2[ValidationCheck: read-only]
+    CRITIC --> CHECK3[ValidationCheck: schema]
+    CRITIC --> CHECK4[ValidationCheck: explain]
+
+    CHECK1 --> CRITIQUE[Critique]
+    CHECK2 --> CRITIQUE
+    CHECK3 --> CRITIQUE
+    CHECK4 --> CRITIQUE
+
+    CRITIQUE --> VERDICT[Verdict]
+    VERDICT --> STREAM[Stream to frontend]
+    VERDICT --> AUDIT[AuditEvent]
 ```
 
-## Requirements
 
-- Python 3.12
-- `uv`
-- Docker Desktop
-- Git
+```text
+Docker Compose
+|- FastAPI application container, built from Dockerfile
+`- PostgreSQL 16 container for sessions and audit history
+```
+
+The planned hosted runtime is:
+
+```text
+Vercel -> Next.js frontend
+Azure Container Apps -> FastAPI Docker image
+Azure Database for PostgreSQL -> managed application database
+```
+
+The local PostgreSQL container is not transferred to Azure. It is replaced by the managed Azure database, while the application image remains portable.
+</details>
+
+------------------------------
+
 
 ## Local Setup
 
@@ -50,9 +93,66 @@ cp .env_example .env
 uv sync
 ```
 
+## How to Run
+
+Query-Court has two parts: a FastAPI backend (port 8000) and a Next.js frontend (port 3000). Run each one in its own terminal.
+
+### 1. Backend
+
+```bash
+  uv sync
+  uv run uvicorn app.main:app --reload --app-dir src
+```
+
+To try it without Azure credentials, set `MODEL_PROVIDER=fake` in `.env`. For real model calls, fill in the `AZURE_OPENAI_*` values.
+
+Check that it is running:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Test the review stream directly:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/reviews/stream \
+  -H "Content-Type: application/json" \
+  -d '{"natural_language_request": "Find five customers", "dialect": "postgres", "maximum_rounds": 3}'
+```
+
+### 2. Frontend
+
+Create `frontend/.env.local` with the backend address:
+
+```bash
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+Then:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000, enter a request, and click **Bring to court**.
+
+The backend allows the frontend through CORS using `FRONTEND_ORIGIN`, which defaults to `http://localhost:3000`. Change it in `.env` if your frontend runs elsewhere.
+
+
+## Requirements
+
+- Python 3.12
+- `uv`
+- Docker Desktop
+- Git
+
+
 The environment template contains empty Azure OpenAI values and a local Docker database URL.
 
-## Run With Docker Compose
+## Run With Docker Compose (Optional)
+Runs the backend and a local PostgreSQL in containers, the same way it will run when deployed. Useful for checking that the Docker image works.
 
 ```bash
 docker compose up --build -d
@@ -88,25 +188,6 @@ Schema context is optional. Query-Court must never claim to have performed a che
 | Isolated sandbox | Schema checks, `EXPLAIN`, and controlled read-only execution | Synthetic data cannot prove real business correctness |
 
 
-## Architecture
-
-See [diagram.html](diagram.html) for the architecture map.
-
-```text
-Docker Compose
-|- FastAPI application container, built from Dockerfile
-`- PostgreSQL 16 container for sessions and audit history
-```
-
-The planned hosted runtime is:
-
-```text
-Vercel -> Next.js frontend
-Azure Container Apps -> FastAPI Docker image
-Azure Database for PostgreSQL -> managed application database
-```
-
-The local PostgreSQL container is not transferred to Azure. It is replaced by the managed Azure database, while the application image remains portable.
 
 ## Development Checks
 
@@ -146,4 +227,15 @@ main
    |- issue/0.2-quality-automation
    |- issue/0.3-local-infrastructure
    `- issue/0.4-documentation
+`- phase/1-review-workflow
+   |- issue/1.1-domain-model
+   |- issue/1.2-dialect-validation
+   |- issue/1.3-read-only-policy
+   |- issue/1.4-schema-context
+   |- issue/1.5-generator-critic-workflow
+   |- issue/1.6-model-provider
+   |- issue/1.7-sse-review-streaming
+   |- issue/1.7.1-compose-review-runtime
+   |- issue/1.8-persistence
+   `- issue/1.9-build-frontend
 ```

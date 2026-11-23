@@ -10,7 +10,7 @@ Users also cannot always share their database schema because Data Definition Lan
 
 ## My Solution
 
-<<add recording here>>
+![](img/query_court_demo.gif)
 
 Query-Court is a privacy-aware SQL generation and review product. A generator agent converts a plain-English request into SQL, while a critic agent evaluates the query in a visible, streamed conversation. The user selects the target SQL dialect and may optionally provide database context in one of two ways:
 

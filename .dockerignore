@@ -1,3 +1,8 @@
+.git
+.github
+.vscode
+frontend/*
+img/*
 .env
 .env.*
 !.env_example
@@ -8,9 +13,13 @@ __pycache__
 .mypy_cache
 .ruff_cache
 *.pyc
+**cache**
 notes.md
 plan.md
 AGENTS.md
 CLAUDE.md
 diagram.html
 .claude
+nothing.md
+rough.py
+z_lessons/*
